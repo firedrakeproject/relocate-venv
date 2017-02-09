@@ -1,17 +1,3 @@
-# Copyright (c) 2017 The University of Edinburgh.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0 */
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 #! /usr/bin/env python
 import os
 import subprocess
@@ -66,14 +52,6 @@ def main(src_dir, cur_dir, dst_dir, copy, archer):
 
 
 if __name__ == '__main__':
-    # parser = optparse.OptionParser("Usage: %prog [options]" "/path/to/existing/venv /path/to/copied/venv /path/to/final/destination/venv")
-    # parser.add_option('-v', action="count", dest='verbose', default=False, help='verbosity')
-    # parser.add_option('-c', action="store_true", dest='copy', default=False, help='Should this script make a copy of the venv?')
-    # options, args = parser.parse_args()
-    # try:
-    #     src_dir, cur_dir, dst_dir = args
-    # except ValueError:
-    #     parser.error("not enough arguments given.")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("src", help="Path to existing, functional virtualenv. Note: this may not exist on this system, but is the path which is used inside the virtualenv.")
@@ -103,7 +81,7 @@ if __name__ == '__main__':
     # cur_dir is where the target venv currently lives, in some cases, this could be a temporary location
     # for example, where you ran "cp -a orig temp" so you didn't break your original before running this
     # cur_dir and src_dir might be the same
-    # dst_dir is where the venv will be located at runtime, most likely /tmp/firedrake
+    # dst_dir is where the venv will be located at runtime, for example /tmp/firedrake
     try:
         main(src_dir, cur_dir, dst_dir, copy, archer)
     except UserError:
