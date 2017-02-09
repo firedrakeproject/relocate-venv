@@ -10,7 +10,12 @@ The default installation of a code into a Python virtualenv, eg `firedrake <http
 
 On a linux-based system, this can be accomplished using make-movable.py. This script takes an existing functional virtualenv and replaces links and paths inside it with references to a new, specified path (usually /tmp/firedrake). This modified virtualenv can then be compressed (e.g. using tar) to be distributed to compute nodes efficiently.
 
-Usage::
+*****
+Usage
+*****
+
+An existing virtualenv can be made relocatable thus::
+  
   python make-movable.py <existing-virtualenv-path> <modifiable-virtualenv-path> <node-local-path> (-c, -a)
 
 
