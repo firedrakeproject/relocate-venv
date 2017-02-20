@@ -32,15 +32,17 @@ def main(src_dir, cur_dir, dst_dir, copy, archer):
 
     grep_and_sed(src_dir, cur_dir, dst_dir)
 
-    # If we are on ARCHER, we need to recall that /work/blah is really mounted at /fsX/blah
-    # Using os.path always gives us the /fs2 representation, but install scripts sometimes dont resolves
-    # paths. So, call grep_and_sed again
+    # If we are on ARCHER, we need to recall that /work/foo is really mounted at /fsX/foo
+    # Using os.path always gives us the /fsX/foo representation, but install scripts sometimes dont resolve
+    # paths. Similarly, /home/bar is really mounted at /homeX/bar.
+    # So, work around this by calling grep_and_sed again with the extra patterns.
     if archer:
-        # First, mod the path to look for /fsX and replace that part with /work
+        # Firstly, modify the path to look for /fsX and replace that part with /work
         src_split = src_dir.split("/")
         if src_split[1].startswith("fs"):
             src_split[1] = "work"
             src_split = '/'.join(src_split)
+        # Secondly, modify the path to look for /homeX and replace that part with /home
         if src_split[1].startswith("home"):
             src_split[1] = "home"
             src_split = '/'.join(src_split)
