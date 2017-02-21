@@ -17,18 +17,13 @@ def grep_and_sed(src_dir, cur_dir, dst_dir):
     sed_pattern = ''.join(["s|", src_dir, "|", dst_dir, "|g"])
     sed_cmd = subprocess.Popen(['xargs', 'sed', '-i', sed_pattern], stdin=grep_cmd.stdout, stdout=subprocess.PIPE)
     stdout, errcode = sed_cmd.communicate()
-    # print "STDOUT:"
-    # print stdout
-    # print "ERRCODE:"
-    # print errcode
 
 
-def main(src_dir, cur_dir, dst_dir, copy, archer):
+def main(src_dir, cur_dir, dst_dir, archer):
     """ Call out the necessary functions."""
     print "I will now create a copy of %s in %s in which all paths point to %s" % (src_dir, cur_dir, dst_dir)
 
-    if copy:
-        shutil.copytree(src_dir, cur_dir, symlinks=False, ignore=shutil.ignore_patterns('*.pyc'))
+    shutil.copytree(src_dir, cur_dir, symlinks=False, ignore=shutil.ignore_patterns('*.pyc'))
 
     grep_and_sed(src_dir, cur_dir, dst_dir)
 
@@ -56,36 +51,31 @@ def main(src_dir, cur_dir, dst_dir, copy, archer):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("src", help="Path to existing, functional virtualenv. Note: this may not exist on this system, but is the path which is used inside the virtualenv.")
-    parser.add_argument("cur", help="Location of an existing, functional virtualenv, which will be modified. If -c is used, this will be created.")
-    parser.add_argument("dst", help="Path where the virtualenv will eventually live. Does not need to be accessible from this system.")
-    parser.add_argument("-c", "--copy", help="If specified, src will be copied to cur before modification.", action="store_true")
+    parser.add_argument("--existing-location", action="store", help="Path to existing, functional virtualenv.", required=True)
+    parser.add_argument("--new-location", action="store", help="Path where the virtualenv will eventually live. Does not need to be accessible from this system.", required=True)
+    parser.add_argument("--output-location", action="store", help="Path to a location where the new, modified virtualenv will be written.", required=True)
     parser.add_argument("-a", "--archer", help="If specified, perform ARCHER specific actions (path resolution etc.).", action="store_true")
     args = parser.parse_args()
 
-    src_dir = os.path.normpath(os.path.abspath(args.src))
-    cur_dir = os.path.normpath(os.path.abspath(args.cur))
-    dst_dir = os.path.normpath(os.path.abspath(args.dst))
+    if args.existing_location:
+        existing = os.path.realpath(args.existing_location)
 
-    print "Src: %s" % src_dir
-    print "Cur: %s" % cur_dir
-    print "Dst: %s" % dst_dir
-    copy = False
-    if args.copy:
-        print "Copy requested."
-        copy = True
+    if args.new_location:
+        newloc = os.path.realpath(args.new_location)
+
+    if args.output_location:
+        outputloc = os.path.realpath(args.output_location)
+
     archer = False
     if args.archer:
         print "ARCHER requested"
         archer = True
 
-    # src_dir is where the target venv was installed to originally
-    # cur_dir is where the target venv currently lives, in some cases, this could be a temporary location
-    # for example, where you ran "cp -a orig temp" so you didn't break your original before running this
-    # cur_dir and src_dir might be the same
-    # dst_dir is where the venv will be located at runtime, for example /tmp/firedrake
+    # existing is where the target venv was installed to originally
+    # outputloc is where the target venv will be created
+    # newloc is where the paths in the target venv will be pointed to, for example /tmp/firedrake
     try:
-        main(src_dir, cur_dir, dst_dir, copy, archer)
+        main(existing, outputloc, newloc, archer)
     except UserError:
         e = sys.exc_info()[1]
         parser.error(str(e))
