@@ -5,7 +5,6 @@ import sys
 import shutil
 import argparse
 
-
 class UserError(Exception):
     pass
 
@@ -13,19 +12,20 @@ class UserError(Exception):
 def grep_and_sed(src_dir, cur_dir, dst_dir):
     """ Grep and Sed: any mentions of src_dir in files in cur_dir are changed to dst_dir """
     print "All references to %s in all files in %s will be replaced with %s" % (src_dir, cur_dir, dst_dir)
-    grep_cmd = subprocess.Popen(['grep', '-Ilre', src_dir, cur_dir], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    sed_pattern = ''.join(["s|", src_dir, "|", dst_dir, "|g"])
-    sed_cmd = subprocess.Popen(['xargs', 'sed', '-i', sed_pattern], stdin=grep_cmd.stdout, stdout=subprocess.PIPE)
-    stdout, errcode = sed_cmd.communicate()
+    # grep_cmd = subprocess.Popen(['grep', '-Ilre', src_dir, cur_dir], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    # sed_pattern = ''.join(["s|", src_dir, "|", dst_dir, "|g"])
+    # sed_cmd = subprocess.Popen(['xargs', 'sed', '-i', sed_pattern], stdin=grep_cmd.stdout, stdout=subprocess.PIPE)
+    # stdout, errcode = sed_cmd.communicate()
 
 
-def main(src_dir, cur_dir, dst_dir, archer):
+def main(src_dir, new_dir, map_d, archer):
     """ Call out the necessary functions."""
-    print "I will now create a copy of %s in %s in which all paths point to %s" % (src_dir, cur_dir, dst_dir)
-
+    
+    print "Creating a copy of %s in %s" % (src_dir, new_dir)
     # shutil.copytree(src_dir, cur_dir, symlinks=False, ignore=shutil.ignore_patterns('*.pyc'))
 
-    # grep_and_sed(src_dir, cur_dir, dst_dir)
+    for key in map_d.keys():
+        grep_and_sed(key, new_dir, map_d[key])
 
     # # If we are on ARCHER, we need to recall that /work/foo is really mounted at /fsX/foo
     # # Using os.path always gives us the /fsX/foo representation, but install scripts sometimes dont resolve
@@ -44,38 +44,63 @@ def main(src_dir, cur_dir, dst_dir, archer):
 
     #     grep_and_sed(src_split, cur_dir, dst_dir)
 
-    print "Now ready to compress %s for easy moving to %s.\n" % (cur_dir, dst_dir)
-    print "Ie: cd %s && tar -c -f ../firedrake.tar ." % cur_dir
+    print "Now ready to compress %s for easy moving.\n" % new_dir
+    print "Ie: cd %s && tar -c -f ../firedrake.tar ." % new_dir
 
-
-if __name__ == '__main__':
-
+def handle_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--existing-location", action="store", help="Path to existing, functional virtualenv.", required=True)
-    parser.add_argument("--new-location", action="store", help="Path where the virtualenv will eventually live. Does not need to be accessible from this system.", required=True)
-    parser.add_argument("--output-location", action="store", help="Path to a location where the new, modified virtualenv will be written.", required=True)
-    parser.add_argument("-a", "--archer", help="If specified, perform ARCHER specific actions (path resolution etc.).", action="store_true")
+    parser.add_argument('existing', action='store', help='Path to existing, functional virtualenv.')
+    parser.add_argument('--output-location', action='store', help='Path to a location where the new, modified virtualenv will be written.')
+    parser.add_argument('--archer', '-a', help='If specified, perform ARCHER specific actions (path resolution etc.).', action='store_true')
+    parser.add_argument('--map', '-m', nargs='+', action='append', help='provide a mapping')
+
     args = parser.parse_args()
 
-    if args.existing_location:
-        existing = os.path.realpath(args.existing_location)
-
-    if args.new_location:
-        newloc = os.path.realpath(args.new_location)
+    existing = os.path.realpath(args.existing)
 
     if args.output_location:
         outputloc = os.path.realpath(args.output_location)
+    else:
+        outputloc = os.path.realpath(os.getcwd() + '/firetemp')
+        print outputloc
 
+
+    # If the user specified a mapping, use that, but sanitise the paths
+    if args.map:
+        _mapping = dict(args.map)
+        mapping_dict={}
+        for key in _mapping.keys():
+            mapping_dict[os.path.realpath(key)] = os.path.realpath(_mapping[key])
+    else:
+        mapping_dict=dict([(existing, outputloc)])
+
+    # If on ARCHER, do ARCHER path mods
     archer = False
     if args.archer:
         print "ARCHER requested"
         archer = True
 
+
+    # Diagnostic
+    print "\nMapping Table"
+    print "-------------"
+    for key in mapping_dict.keys():
+        print key, " --> ", mapping_dict[key]
+    print "-------------\n"
+
     # existing is where the target venv was installed to originally
     # outputloc is where the target venv will be created
     # newloc is where the paths in the target venv will be pointed to, for example /tmp/firedrake
     try:
-        main(existing, outputloc, newloc, archer)
+        main(existing, outputloc, mapping_dict, archer)
     except UserError:
         e = sys.exc_info()[1]
         parser.error(str(e))
+    
+
+
+
+# Provide mechanism to run this as a script if required
+if __name__ == '__main__':
+    handle_args()
+    
