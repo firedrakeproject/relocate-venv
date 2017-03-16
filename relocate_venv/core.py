@@ -13,24 +13,25 @@ class UserError(Exception):
 
 def grep_and_sed(src_dir, cur_dir, dst_dir):
     """ Grep and Sed: any mentions of src_dir in files in cur_dir are changed to dst_dir """
-    print "All references to %s in all files in %s will be replaced with %s" % (src_dir, cur_dir, dst_dir)
-    # grep_cmd = subprocess.Popen(['grep', '-Ilre', src_dir, cur_dir], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    # sed_pattern = ''.join(["s|", src_dir, "|", dst_dir, "|g"])
-    # sed_cmd = subprocess.Popen(['xargs', 'sed', '-i', sed_pattern], stdin=grep_cmd.stdout, stdout=subprocess.PIPE)
-    # stdout, errcode = sed_cmd.communicate()
+    # print "All references to %s in all files in %s will be replaced with %s" % (src_dir, cur_dir, dst_dir)
+    grep_cmd = subprocess.Popen(['grep', '-Ilre', src_dir, cur_dir], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    sed_pattern = ''.join(["s|", src_dir, "|", dst_dir, "|g"])
+    sed_cmd = subprocess.Popen(['xargs', 'sed', '-i', sed_pattern], stdin=grep_cmd.stdout, stdout=subprocess.PIPE)
+    stdout, errcode = sed_cmd.communicate()
 
 
 def main(src_dir, new_dir, map_d, archer):
     """ Call out the necessary functions."""
 
     print "Creating a copy of %s in %s" % (src_dir, new_dir)
-    # shutil.copytree(src_dir, new_dir, symlinks=False, ignore=shutil.ignore_patterns('*.pyc'))
+    shutil.copytree(src_dir, new_dir, symlinks=False, ignore=shutil.ignore_patterns('*.pyc'))
 
+    print "Changing the paths according to the mapping table."
     for key in map_d.keys():
         grep_and_sed(key, new_dir, map_d[key])
 
-    print "Now ready to compress %s for easy moving.\n" % new_dir
-    print "Ie: cd %s && tar -c -f ../firedrake.tar ." % new_dir
+    fn = shutil.make_archive(new_dir, 'tar', new_dir)
+    print "%s can now be copied elsewhere and used." %(fn)
 
 
 def handle_args():
